@@ -8,7 +8,6 @@
 import Config
 
 config :clickthebutton,
-  ecto_repos: [Clickthebutton.Repo],
   generators: [timestamp_type: :utc_datetime]
 
 # Configures the endpoint

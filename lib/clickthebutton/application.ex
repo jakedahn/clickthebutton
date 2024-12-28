@@ -9,7 +9,6 @@ defmodule Clickthebutton.Application do
   def start(_type, _args) do
     children = [
       ClickthebuttonWeb.Telemetry,
-      Clickthebutton.Repo,
       {DNSCluster, query: Application.get_env(:clickthebutton, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: Clickthebutton.PubSub},
       # Start the Finch HTTP client for sending emails
