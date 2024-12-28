@@ -5,7 +5,7 @@ defmodule Clickthebutton.GameServer do
   @table_name :ctb_game_state
   # Save every 1 minute
   @save_interval :timer.seconds(5)
-  @save_path "priv/game_state.dat"
+  @save_path Application.compile_env(:clickthebutton, :game_state_path, "priv/game_state.dat")
   @topic "game:scores"
 
   # Client API
@@ -111,5 +111,31 @@ defmodule Clickthebutton.GameServer do
 
   defp schedule_save do
     Process.send_after(self(), :save_to_disk, @save_interval)
+  end
+
+  # NOTE: This is only used inside of tests to reset state.
+  @impl true
+  def handle_info(:reinit_for_test, state) do
+    # Remove the existing named table so file2tab won't conflict
+    :ets.delete(@table_name)
+
+    case File.exists?(@save_path) do
+      true ->
+        case :ets.file2tab(String.to_charlist(@save_path)) do
+          {:ok, loaded_table} ->
+            Logger.info("Reloaded game state from disk for test: #{inspect(loaded_table)}")
+            {:noreply, %{state | table: loaded_table}}
+
+          {:error, reason} ->
+            Logger.warning("Failed to reload game state for test: #{inspect(reason)}")
+            new_table = :ets.new(@table_name, [:set, :named_table, :public])
+            {:noreply, %{state | table: new_table}}
+        end
+
+      false ->
+        Logger.info("No existing game state found during test reinit, starting fresh")
+        new_table = :ets.new(@table_name, [:set, :named_table, :public])
+        {:noreply, %{state | table: new_table}}
+    end
   end
 end
