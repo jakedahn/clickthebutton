@@ -13,6 +13,7 @@ defmodule Clickthebutton.Application do
       {Phoenix.PubSub, name: Clickthebutton.PubSub},
       # Start the Finch HTTP client for sending emails
       {Finch, name: Clickthebutton.Finch},
+      {Clickthebutton.GameServer, []},
       # Start a worker by calling: Clickthebutton.Worker.start_link(arg)
       # {Clickthebutton.Worker, arg},
       # Start to serve requests, typically the last entry
