@@ -4,7 +4,8 @@ defmodule Clickthebutton.GameServer do
 
   @table_name :ctb_game_state
   # Save every 1 minute
-  @save_interval :timer.minutes(1)
+  @save_interval :timer.seconds(5)
+  @save_path "priv/game_state.dat"
   @topic "game:scores"
 
   # Client API
@@ -27,7 +28,26 @@ defmodule Clickthebutton.GameServer do
   # Server Callbacks
   @impl true
   def init(_opts) do
-    table = :ets.new(@table_name, [:set, :named_table, :public])
+    # If we have persisted data, load it from disk.
+    table =
+      case File.exists?(@save_path) do
+        true ->
+          case :ets.file2tab(String.to_charlist(@save_path)) do
+            {:ok, loaded_table} ->
+              Logger.info("Loaded existing game state from disk")
+              loaded_table
+
+            {:error, reason} ->
+              Logger.warning("Failed to load game state: #{inspect(reason)}")
+              # If load fails, create new table
+              :ets.new(@table_name, [:set, :named_table, :public])
+          end
+
+        false ->
+          Logger.info("No existing game state found, starting fresh")
+          :ets.new(@table_name, [:set, :named_table, :public])
+      end
+
     schedule_save()
     {:ok, %{table: table, last_save: DateTime.utc_now(), dirty: false}}
   end
@@ -82,8 +102,7 @@ defmodule Clickthebutton.GameServer do
   @impl true
   def handle_info(:save_to_disk, state) do
     # Save ETS table to disk
-    save_path = "priv/game_state.dat"
-    :ets.tab2file(@table_name, String.to_charlist(save_path))
+    :ets.tab2file(@table_name, String.to_charlist(@save_path))
     Logger.info("Game state saved to disk")
 
     schedule_save()
