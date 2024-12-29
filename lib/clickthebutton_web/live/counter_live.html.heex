@@ -1,37 +1,42 @@
+<div class="flex">
+  <div class="min-w-3/12 p-4">
+    <h2 class="mb-4">Leaderboard</h2>
+    <ul class="text-xs text-gray-400">
+      <%= for {{user_id, {score, username}}, index} <- Enum.with_index(@leaderboard) do %>
+        <li class={if user_id == @user_id, do: "text-black"}>
+          {index + 1}. {username}: {score}
+        </li>
+      <% end %>
+    </ul>
+  </div>
+
+  <div class="w-9/12 text-center">
+    <h1 class="text-6xl mt-10 mb-8">{@count}</h1>
+    <button
+      class="bg-black text-white font-bold py-4 px-6 rounded disabled:opacity-50"
+      phx-click="increment"
+      disabled={@throttled_until && @throttled_until > System.system_time(:millisecond)}
+    >
+      click the button
+    </button>
+  </div>
+</div>
+
+<%!-- <%= if @throttled_until do %>
+    <div class="text-red-600 mb-4">
+      You've been throttled for clicking too fast! Your score has been reset.
+      <%= if @throttled_until > System.system_time(:millisecond) do %>
+        Try again in {trunc((@throttled_until - System.system_time(:millisecond)) / 1000)} seconds.
+      <% end %>
+    </div>
+  <% end %> --%>
+
+<%!-- 
 <div class="container mx-auto p-4">
   <div class="flex gap-4">
-    <div class="w-1/4">
-      <h2 class="text-xl font-bold mb-4">Leaderboard</h2>
-      <div class="bg-white shadow rounded p-4">
-        <ul>
-          <%= for {{user_id, {score, username}}, index} <- Enum.with_index(@leaderboard) do %>
-            <li class={if user_id == @user_id, do: "font-bold"}>
-              {index + 1}. {username}: {score}
-            </li>
-          <% end %>
-        </ul>
-      </div>
-    </div>
-
     <div class="w-3/4 text-center">
       <h1 class="text-4xl font-bold mb-8">Count: {@count}</h1>
 
-      <%= if @throttled_until do %>
-        <div class="text-red-600 mb-4">
-          You've been throttled for clicking too fast! Your score has been reset.
-          <%= if @throttled_until > System.system_time(:millisecond) do %>
-            Try again in {trunc((@throttled_until - System.system_time(:millisecond)) / 1000)} seconds.
-          <% end %>
-        </div>
-      <% end %>
-
-      <button
-        class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded disabled:opacity-50"
-        phx-click="increment"
-        disabled={@throttled_until && @throttled_until > System.system_time(:millisecond)}
-      >
-        Click me!
-      </button>
     </div>
   </div>
-</div>
+</div> --%>
