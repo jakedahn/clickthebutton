@@ -18,6 +18,7 @@ defmodule ClickthebuttonWeb.CounterLive do
          |> assign(:user_id, user_id)
          |> assign(:username, username)
          |> assign(:count, GameServer.get_score(user_id))
+         |> assign(:throttled_until, nil)
          |> assign(:leaderboard, GameServer.get_leaderboard())}
 
       _ ->
@@ -27,27 +28,28 @@ defmodule ClickthebuttonWeb.CounterLive do
 
   @impl true
   def handle_event("increment", _params, socket) do
-    new_score =
-      GameServer.increment_score(socket.assigns.user_id, %{username: socket.assigns.username})
+    case GameServer.increment_score(socket.assigns.user_id, %{username: socket.assigns.username}) do
+      {:ok, new_score} ->
+        {:noreply, assign(socket, :count, new_score)}
 
-    {:noreply,
-     socket
-     |> assign(:count, new_score)}
+      {:throttled, until} ->
+        {:noreply, assign(socket, :throttled_until, until)}
+    end
   end
 
-  # Handle the score_updated message from PubSub
   @impl true
-  def handle_info({:score_updated, user_id, new_score}, socket) do
-    {:noreply,
-     socket
-     |> maybe_update_count(user_id, new_score)
-     |> assign(:leaderboard, GameServer.get_leaderboard())}
+  def handle_info({:score_updated, _user_id, _new_score}, socket) do
+    # Always refresh leaderboard when any score changes
+    {:noreply, assign(socket, :leaderboard, GameServer.get_leaderboard())}
   end
 
-  # Helper function to update count only if it's the current user
-  defp maybe_update_count(socket, user_id, new_score) when user_id == socket.assigns.user_id do
-    assign(socket, :count, new_score)
+  @impl true
+  def handle_info({:user_throttled, user_id, until}, socket)
+      when user_id == socket.assigns.user_id do
+    {:noreply, assign(socket, :throttled_until, until)}
   end
 
-  defp maybe_update_count(socket, _user_id, _new_score), do: socket
+  def handle_info({:user_throttled, _user_id, _until}, socket) do
+    {:noreply, socket}
+  end
 end

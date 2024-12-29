@@ -19,7 +19,7 @@ defmodule Clickthebutton.GameServerTest do
   describe "score management" do
     test "increments score for new user" do
       assert GameServer.get_score("user1") == 0
-      assert GameServer.increment_score("user1", %{username: "test1"}) == 1
+      assert {:ok, 1} = GameServer.increment_score("user1", %{username: "test1"})
       assert GameServer.get_score("user1") == 1
     end
 
@@ -36,6 +36,73 @@ defmodule Clickthebutton.GameServerTest do
 
       assert GameServer.get_score("user3") == 2
       assert GameServer.get_score("user4") == 1
+    end
+
+    test "throttles users exceeding click rate limit" do
+      # Simulate rapid clicking
+      user_id = "throttle_test_user"
+      username = %{username: "throttle_test"}
+
+      # Send 26 clicks (over the 25/sec limit)
+      results =
+        for _i <- 1..26 do
+          GameServer.increment_score(user_id, username)
+        end
+
+      # The first 25 should succeed, the 26th should throttle
+      assert Enum.count(results, fn
+               {:ok, _} -> true
+               _ -> false
+             end) == 25
+
+      assert List.last(results) |> elem(0) == :throttled
+
+      # Verify score was reset to 0
+      assert GameServer.get_score(user_id) == 0
+
+      # Verify user is still throttled
+      assert {:throttled, _until} = GameServer.increment_score(user_id, username)
+    end
+
+    test "allows clicking again after throttle period" do
+      user_id = "throttle_recovery_user"
+      username = %{username: "recovery_test"}
+
+      # Trigger throttling
+      for _i <- 1..26 do
+        GameServer.increment_score(user_id, username)
+      end
+
+      # Fast forward time by manipulating the throttle check
+      future_time = System.system_time(:millisecond) + :timer.minutes(1) + 100
+
+      # This is a bit hacky for testing, but we'll directly manipulate the throttled_users map
+      send(GameServer, {:test_set_time, future_time})
+
+      # Should be able to click again
+      assert {:ok, 1} = GameServer.increment_score(user_id, username)
+    end
+
+    test "maintains throttle across multiple click attempts" do
+      user_id = "persistent_throttle_user"
+      username = %{username: "persistent_test"}
+
+      # Trigger throttling
+      for _i <- 1..26 do
+        GameServer.increment_score(user_id, username)
+      end
+
+      # Try clicking several times while throttled
+      results =
+        for _i <- 1..5 do
+          GameServer.increment_score(user_id, username)
+        end
+
+      # All attempts should be throttled
+      assert Enum.all?(results, fn
+               {:throttled, _} -> true
+               _ -> false
+             end)
     end
   end
 

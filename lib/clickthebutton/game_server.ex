@@ -8,6 +8,16 @@ defmodule Clickthebutton.GameServer do
   @save_path Application.compile_env(:clickthebutton, :game_state_path, "priv/game_state.dat")
   @topic "game:scores"
 
+  # New constants for throttling
+  @max_clicks_per_second 25
+  @throttle_duration :timer.minutes(1)
+  @click_window :timer.seconds(1)
+
+  # Add to your state
+  defmodule State do
+    defstruct [:table, :dirty, :click_timestamps, :throttled_users, test_time: nil]
+  end
+
   # Client API
   def start_link(_opts) do
     GenServer.start_link(__MODULE__, [], name: __MODULE__)
@@ -27,6 +37,10 @@ defmodule Clickthebutton.GameServer do
 
   def username_taken?(username) do
     GenServer.call(__MODULE__, {:username_taken?, username})
+  end
+
+  def is_throttled?(user_id) do
+    GenServer.call(__MODULE__, {:is_throttled?, user_id})
   end
 
   # Server Callbacks
@@ -53,23 +67,47 @@ defmodule Clickthebutton.GameServer do
       end
 
     schedule_save()
-    {:ok, %{table: table, last_save: DateTime.utc_now(), dirty: false}}
+
+    {:ok,
+     %State{
+       table: table,
+       dirty: false,
+       click_timestamps: %{},
+       throttled_users: %{}
+     }}
   end
 
   @impl true
   def handle_call({:increment, user_id, username}, _from, state) do
-    new_score =
-      @table_name
-      |> :ets.lookup(user_id)
-      |> case do
-        [{^user_id, {score, _username}}] -> score + 1
-        [] -> 1
-      end
-      |> tap(fn score -> :ets.insert(@table_name, {user_id, {score, username}}) end)
+    now = System.system_time(:millisecond)
 
-    Phoenix.PubSub.broadcast(Clickthebutton.PubSub, @topic, {:score_updated, user_id, new_score})
+    case check_throttle(user_id, now, state) do
+      {:throttled, until} ->
+        Phoenix.PubSub.broadcast(
+          Clickthebutton.PubSub,
+          @topic,
+          {:user_throttled, user_id, until}
+        )
 
-    {:reply, new_score, %{state | dirty: true}}
+        {:reply, {:throttled, until}, state}
+
+      {:ok, new_state} ->
+        # Existing increment logic
+        new_score =
+          case :ets.lookup(@table_name, user_id) do
+            [{^user_id, {score, _}}] -> score + 1
+            [] -> 1
+          end
+          |> tap(fn score -> :ets.insert(@table_name, {user_id, {score, username}}) end)
+
+        Phoenix.PubSub.broadcast(
+          Clickthebutton.PubSub,
+          @topic,
+          {:score_updated, user_id, new_score}
+        )
+
+        {:reply, {:ok, new_score}, %{new_state | dirty: true}}
+    end
   end
 
   @impl true
@@ -106,6 +144,19 @@ defmodule Clickthebutton.GameServer do
       end)
 
     {:reply, is_taken, state}
+  end
+
+  @impl true
+  def handle_call({:is_throttled?, user_id}, _from, state) do
+    now = System.system_time(:millisecond)
+
+    is_throttled =
+      case Map.get(state.throttled_users, user_id) do
+        nil -> false
+        until -> now < until
+      end
+
+    {:reply, is_throttled, state}
   end
 
   @impl true
@@ -151,6 +202,49 @@ defmodule Clickthebutton.GameServer do
         Logger.info("No existing game state found during test reinit, starting fresh")
         new_table = :ets.new(@table_name, [:set, :named_table, :public])
         {:noreply, %{state | table: new_table}}
+    end
+  end
+
+  # Test helper to manipulate time for throttle testing
+  @impl true
+  def handle_info({:test_set_time, time}, state) do
+    {:noreply, %{state | test_time: time}}
+  end
+
+  # Helper functions
+  defp check_throttle(user_id, now, state) do
+    current_time = state.test_time || now
+
+    case Map.get(state.throttled_users, user_id) do
+      until when is_number(until) and until > current_time ->
+        {:throttled, until}
+
+      _ ->
+        timestamps =
+          Map.get(state.click_timestamps, user_id, [])
+          |> Enum.filter(fn ts -> current_time - ts < @click_window end)
+          |> Kernel.++([current_time])
+
+        if length(timestamps) > @max_clicks_per_second do
+          throttle_until = current_time + @throttle_duration
+
+          new_state = %{
+            state
+            | throttled_users: Map.put(state.throttled_users, user_id, throttle_until),
+              click_timestamps: Map.delete(state.click_timestamps, user_id)
+          }
+
+          # Reset score to 0 when throttled
+          :ets.insert(@table_name, {user_id, {0, ""}})
+          {:throttled, throttle_until}
+        else
+          new_state = %{
+            state
+            | click_timestamps: Map.put(state.click_timestamps, user_id, timestamps)
+          }
+
+          {:ok, new_state}
+        end
     end
   end
 end

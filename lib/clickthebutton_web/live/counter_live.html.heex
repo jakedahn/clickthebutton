@@ -15,9 +15,20 @@
 
     <div class="w-3/4 text-center">
       <h1 class="text-4xl font-bold mb-8">Count: {@count}</h1>
+
+      <%= if @throttled_until do %>
+        <div class="text-red-600 mb-4">
+          You've been throttled for clicking too fast! Your score has been reset.
+          <%= if @throttled_until > System.system_time(:millisecond) do %>
+            Try again in {trunc((@throttled_until - System.system_time(:millisecond)) / 1000)} seconds.
+          <% end %>
+        </div>
+      <% end %>
+
       <button
-        class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+        class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded disabled:opacity-50"
         phx-click="increment"
+        disabled={@throttled_until && @throttled_until > System.system_time(:millisecond)}
       >
         Click me!
       </button>
