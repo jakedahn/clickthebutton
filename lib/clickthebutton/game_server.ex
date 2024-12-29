@@ -25,6 +25,10 @@ defmodule Clickthebutton.GameServer do
     GenServer.call(__MODULE__, :get_leaderboard)
   end
 
+  def username_taken?(username) do
+    GenServer.call(__MODULE__, {:username_taken?, username})
+  end
+
   # Server Callbacks
   @impl true
   def init(_opts) do
@@ -90,6 +94,18 @@ defmodule Clickthebutton.GameServer do
       |> Enum.take(100)
 
     {:reply, leaderboard, state}
+  end
+
+  @impl true
+  def handle_call({:username_taken?, username}, _from, state) do
+    is_taken =
+      @table_name
+      |> :ets.tab2list()
+      |> Enum.any?(fn {_user_id, {_score, existing_username}} ->
+        String.downcase(existing_username) == String.downcase(username)
+      end)
+
+    {:reply, is_taken, state}
   end
 
   @impl true

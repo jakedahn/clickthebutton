@@ -93,6 +93,16 @@ defmodule Clickthebutton.GameServerTest do
     end
   end
 
+  describe "username uniqueness" do
+    test "detects taken usernames" do
+      GameServer.increment_score("user1", %{username: "TestUser"})
+      assert GameServer.username_taken?("TestUser")
+      # Case insensitive
+      assert GameServer.username_taken?("testuser")
+      refute GameServer.username_taken?("DifferentUser")
+    end
+  end
+
   # Helper functions
   defp cleanup_test_file do
     File.rm(@save_path)
