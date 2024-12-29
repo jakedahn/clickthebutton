@@ -8,7 +8,7 @@ defmodule ClickthebuttonWeb.Router do
     plug :put_root_layout, html: {ClickthebuttonWeb.Layouts, :root}
     plug :protect_from_forgery
     plug :put_secure_browser_headers
-    plug ClickthebuttonWeb.UserSessionPlug
+    plug :fetch_cookies
   end
 
   pipeline :api do
@@ -16,11 +16,17 @@ defmodule ClickthebuttonWeb.Router do
   end
 
   scope "/", ClickthebuttonWeb do
+    pipe_through [:browser, :ensure_username]
+
+    live "/game", CounterLive
+  end
+
+  scope "/", ClickthebuttonWeb do
     pipe_through :browser
 
-    get "/", PageController, :home
-
-    live "/counter", CounterLive
+    live "/", UsernameLive
+    post "/username", UsernameController, :create
+    live "/game", CounterLive
   end
 
   # Other scopes may use custom stacks.
@@ -43,5 +49,9 @@ defmodule ClickthebuttonWeb.Router do
       live_dashboard "/dashboard", metrics: ClickthebuttonWeb.Telemetry
       forward "/mailbox", Plug.Swoosh.MailboxPreview
     end
+  end
+
+  pipeline :ensure_username do
+    plug ClickthebuttonWeb.EnsureUsernamePlug
   end
 end

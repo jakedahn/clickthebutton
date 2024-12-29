@@ -673,4 +673,14 @@ defmodule ClickthebuttonWeb.CoreComponents do
   def translate_errors(errors, field) when is_list(errors) do
     for {^field, {msg, opts}} <- errors, do: translate_error({msg, opts})
   end
+
+  def live_socket_path(socket) do
+    [
+      socket_path: socket.endpoint.script_name,
+      connect_params: %{
+        "_csrf_token" => Phoenix.Controller.get_csrf_token(),
+        "cookies" => socket.cookies
+      }
+    ]
+  end
 end

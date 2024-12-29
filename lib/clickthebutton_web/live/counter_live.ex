@@ -5,18 +5,26 @@ defmodule ClickthebuttonWeb.CounterLive do
   @topic "game:scores"
 
   @impl true
-  def mount(_params, session, socket) do
-    if connected?(socket) do
-      Phoenix.PubSub.subscribe(Clickthebutton.PubSub, @topic)
+  def mount(_params, _session, socket) do
+    # Check cookies for user data
+    cookies = get_connect_params(socket)["cookies"] || %{}
+
+    case cookies do
+      %{"ctb_user_id" => user_id, "ctb_username" => username} ->
+        if connected?(socket) do
+          Phoenix.PubSub.subscribe(Clickthebutton.PubSub, @topic)
+        end
+
+        {:ok,
+         socket
+         |> assign(:user_id, user_id)
+         |> assign(:username, username)
+         |> assign(:count, GameServer.get_score(user_id))
+         |> assign(:leaderboard, GameServer.get_leaderboard())}
+
+      _ ->
+        {:ok, redirect(socket, to: ~p"/")}
     end
-
-    user_id = session["ctb_user_id"]
-
-    {:ok,
-     socket
-     |> assign(:user_id, user_id)
-     |> assign(:count, GameServer.get_score(user_id))
-     |> assign(:leaderboard, GameServer.get_leaderboard())}
   end
 
   @impl true
