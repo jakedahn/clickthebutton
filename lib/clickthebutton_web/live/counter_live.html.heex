@@ -4,9 +4,9 @@
       <h2 class="text-xl font-bold mb-4">Leaderboard</h2>
       <div class="bg-white shadow rounded p-4">
         <ul>
-          <%= for {{user_id, score}, index} <- Enum.with_index(@leaderboard) do %>
+          <%= for {{user_id, {score, username}}, index} <- Enum.with_index(@leaderboard) do %>
             <li class={if user_id == @user_id, do: "font-bold"}>
-              {index + 1}. {user_id}: {score}
+              {index + 1}. {username}: {score}
             </li>
           <% end %>
         </ul>

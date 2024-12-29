@@ -19,20 +19,20 @@ defmodule Clickthebutton.GameServerTest do
   describe "score management" do
     test "increments score for new user" do
       assert GameServer.get_score("user1") == 0
-      assert GameServer.increment_score("user1") == 1
+      assert GameServer.increment_score("user1", %{username: "test1"}) == 1
       assert GameServer.get_score("user1") == 1
     end
 
     test "increments existing score" do
-      GameServer.increment_score("user2")
-      GameServer.increment_score("user2")
+      GameServer.increment_score("user2", %{username: "test2"})
+      GameServer.increment_score("user2", %{username: "test2"})
       assert GameServer.get_score("user2") == 2
     end
 
     test "handles multiple users" do
-      GameServer.increment_score("user3")
-      GameServer.increment_score("user4")
-      GameServer.increment_score("user3")
+      GameServer.increment_score("user3", %{username: "test3"})
+      GameServer.increment_score("user4", %{username: "test4"})
+      GameServer.increment_score("user3", %{username: "test3"})
 
       assert GameServer.get_score("user3") == 2
       assert GameServer.get_score("user4") == 1
@@ -42,18 +42,18 @@ defmodule Clickthebutton.GameServerTest do
   describe "leaderboard" do
     test "returns sorted leaderboard" do
       # Create some scores
-      GameServer.increment_score("user5")
-      GameServer.increment_score("user5")
-      GameServer.increment_score("user6")
-      GameServer.increment_score("user7")
-      GameServer.increment_score("user7")
-      GameServer.increment_score("user7")
+      GameServer.increment_score("user5", %{username: "test5"})
+      GameServer.increment_score("user5", %{username: "test5"})
+      GameServer.increment_score("user6", %{username: "test6"})
+      GameServer.increment_score("user7", %{username: "test7"})
+      GameServer.increment_score("user7", %{username: "test7"})
+      GameServer.increment_score("user7", %{username: "test7"})
 
       leaderboard = GameServer.get_leaderboard()
       assert length(leaderboard) > 0
 
       # Check sorting
-      [{top_user, top_score} | _rest] = leaderboard
+      [{top_user, {top_score, _top_username}} | _rest] = leaderboard
       assert top_user == "user7"
       assert top_score == 3
     end
@@ -62,7 +62,7 @@ defmodule Clickthebutton.GameServerTest do
       # Create more than 100 users
       for i <- 1..110 do
         user_id = "user#{i}"
-        GameServer.increment_score(user_id)
+        GameServer.increment_score(user_id, %{username: "test#{i}"})
       end
 
       leaderboard = GameServer.get_leaderboard()
@@ -73,9 +73,9 @@ defmodule Clickthebutton.GameServerTest do
   describe "persistence" do
     test "saves and loads state" do
       # Create some initial state
-      GameServer.increment_score("persist_user1")
-      GameServer.increment_score("persist_user1")
-      GameServer.increment_score("persist_user2")
+      GameServer.increment_score("persist_user1", %{username: "test1"})
+      GameServer.increment_score("persist_user1", %{username: "test1"})
+      GameServer.increment_score("persist_user2", %{username: "test2"})
 
       # Force a save
       send(GameServer, :save_to_disk)

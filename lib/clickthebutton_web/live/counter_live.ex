@@ -1,16 +1,14 @@
 defmodule ClickthebuttonWeb.CounterLive do
   use ClickthebuttonWeb, :live_view
   alias Clickthebutton.GameServer
+  require IEx
 
   @topic "game:scores"
 
   @impl true
-  def mount(_params, _session, socket) do
-    # Check cookies for user data
-    cookies = get_connect_params(socket)["cookies"] || %{}
-
-    case cookies do
-      %{"ctb_user_id" => user_id, "ctb_username" => username} ->
+  def mount(_params, session, socket) do
+    case {session["user_id"], session["username"]} do
+      {user_id, username} when is_binary(user_id) and is_binary(username) ->
         if connected?(socket) do
           Phoenix.PubSub.subscribe(Clickthebutton.PubSub, @topic)
         end
@@ -29,7 +27,8 @@ defmodule ClickthebuttonWeb.CounterLive do
 
   @impl true
   def handle_event("increment", _params, socket) do
-    new_score = GameServer.increment_score(socket.assigns.user_id)
+    new_score =
+      GameServer.increment_score(socket.assigns.user_id, %{username: socket.assigns.username})
 
     {:noreply,
      socket

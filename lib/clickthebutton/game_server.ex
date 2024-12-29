@@ -13,8 +13,8 @@ defmodule Clickthebutton.GameServer do
     GenServer.start_link(__MODULE__, [], name: __MODULE__)
   end
 
-  def increment_score(user_id) do
-    GenServer.call(__MODULE__, {:increment, user_id})
+  def increment_score(user_id, %{username: username}) do
+    GenServer.call(__MODULE__, {:increment, user_id, username})
   end
 
   def get_score(user_id) do
@@ -53,17 +53,16 @@ defmodule Clickthebutton.GameServer do
   end
 
   @impl true
-  def handle_call({:increment, user_id}, _from, state) do
+  def handle_call({:increment, user_id, username}, _from, state) do
     new_score =
       @table_name
       |> :ets.lookup(user_id)
       |> case do
-        [{^user_id, score}] -> score + 1
+        [{^user_id, {score, _username}}] -> score + 1
         [] -> 1
       end
-      |> tap(fn score -> :ets.insert(@table_name, {user_id, score}) end)
+      |> tap(fn score -> :ets.insert(@table_name, {user_id, {score, username}}) end)
 
-    # Broadcast the update to all subscribers
     Phoenix.PubSub.broadcast(Clickthebutton.PubSub, @topic, {:score_updated, user_id, new_score})
 
     {:reply, new_score, %{state | dirty: true}}
@@ -75,7 +74,7 @@ defmodule Clickthebutton.GameServer do
       @table_name
       |> :ets.lookup(user_id)
       |> case do
-        [{^user_id, score}] -> score
+        [{^user_id, {score, _username}}] -> score
         [] -> 0
       end
 
@@ -87,7 +86,7 @@ defmodule Clickthebutton.GameServer do
     leaderboard =
       @table_name
       |> :ets.tab2list()
-      |> Enum.sort_by(fn {_user, score} -> score end, :desc)
+      |> Enum.sort_by(fn {_user_id, {score, _username}} -> score end, :desc)
       |> Enum.take(100)
 
     {:reply, leaderboard, state}

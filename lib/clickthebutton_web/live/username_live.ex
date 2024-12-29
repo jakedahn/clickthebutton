@@ -25,13 +25,14 @@ defmodule ClickthebuttonWeb.UsernameLive do
       :ok ->
         user_id = "user_" <> UUID.uuid4(:hex)
 
-        # Set cookies with 1 year expiry
-        socket =
-          socket
-          |> put_resp_cookie("ctb_user_id", user_id, max_age: 31_536_000, path: "/")
-          |> put_resp_cookie("ctb_username", username, max_age: 31_536_000, path: "/")
+        IO.puts("setting cookie and redirecting to /game")
 
-        {:noreply, redirect(socket, to: ~p"/game")}
+        # Set cookies with 1 year expiry
+        {:noreply,
+         socket
+         |> put_resp_cookie("ctb_user_id", user_id, max_age: 31_536_000, path: "/")
+         |> put_resp_cookie("ctb_username", username, max_age: 31_536_000, path: "/")
+         |> redirect(to: ~p"/game")}
 
       {:error, message} ->
         {:noreply, assign(socket, :error, message)}

@@ -9,16 +9,11 @@ defmodule ClickthebuttonWeb.Router do
     plug :protect_from_forgery
     plug :put_secure_browser_headers
     plug :fetch_cookies
+    plug ClickthebuttonWeb.UserSessionPlug
   end
 
   pipeline :api do
     plug :accepts, ["json"]
-  end
-
-  scope "/", ClickthebuttonWeb do
-    pipe_through [:browser, :ensure_username]
-
-    live "/game", CounterLive
   end
 
   scope "/", ClickthebuttonWeb do
