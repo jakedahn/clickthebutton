@@ -5,16 +5,17 @@ defmodule ClickthebuttonWeb.CounterLive do
   @topic "game:scores"
 
   @impl true
-  def mount(_params, _session, socket) do
+  def mount(_params, session, socket) do
     if connected?(socket) do
-      # Subscribe to score updates when the socket connects
       Phoenix.PubSub.subscribe(Clickthebutton.PubSub, @topic)
     end
 
+    user_id = session["ctb_user_id"]
+
     {:ok,
      socket
-     |> assign(:user_id, "test_user")
-     |> assign(:count, GameServer.get_score("test_user"))
+     |> assign(:user_id, user_id)
+     |> assign(:count, GameServer.get_score(user_id))
      |> assign(:leaderboard, GameServer.get_leaderboard())}
   end
 
