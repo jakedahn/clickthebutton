@@ -19,6 +19,7 @@
       class="bg-black text-white font-bold py-4 px-6 rounded disabled:opacity-50"
       phx-click="increment"
       disabled={@throttled_until && @throttled_until > System.system_time(:millisecond)}
+      style="touch-action: manipulation;"
     >
       click the button
     </button>
