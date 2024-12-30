@@ -6,7 +6,10 @@ import Config
 # which you should run after static files are built and
 # before starting your production server.
 config :clickthebutton, ClickthebuttonWeb.Endpoint,
-  cache_static_manifest: "priv/static/cache_manifest.json"
+  cache_static_manifest: "priv/static/cache_manifest.json",
+  http: [port: {:system, "PORT"}],
+  url: [scheme: "https", host: "clickthebutton.lol", port: 443],
+  check_origin: ["https://clickthebutton.lol", "https://clickthebutton.fly.dev"]
 
 # Configures Swoosh API Client
 config :swoosh, api_client: Swoosh.ApiClient.Finch, finch_name: Clickthebutton.Finch
