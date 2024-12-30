@@ -28,4 +28,15 @@
       </button>
     </div>
   </.form>
+
+  <div class="w-full p-4 text-center mt-12">
+    <h2 class="mb-4">Leaderboard</h2>
+    <ul class="text-xs text-gray-400">
+      <%= for {{_user_id, {score, username}}, index} <- Enum.with_index(@leaderboard) do %>
+        <li>
+          {index + 1}. {username}: {score}
+        </li>
+      <% end %>
+    </ul>
+  </div>
 </div>

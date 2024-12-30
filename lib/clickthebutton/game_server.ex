@@ -13,7 +13,7 @@ defmodule Clickthebutton.GameServer do
   @topic "game:scores"
 
   # New constants for throttling
-  @max_clicks_per_second 25
+  @max_clicks_per_second 10
   @throttle_duration :timer.minutes(1)
   @click_window :timer.seconds(1)
 
