@@ -1,3 +1,17 @@
+<%= if @throttled_until do %>
+  <div class="text-red-600 mb-4 text-center">
+    <p>
+      You've been throttled for clicking too fast!
+    </p>
+    <p>
+      Your score has been reset.
+      <%= if @throttled_until > System.system_time(:millisecond) do %>
+        Try again in {trunc((@throttled_until - System.system_time(:millisecond)) / 1000)} seconds.
+      <% end %>
+    </p>
+  </div>
+<% end %>
+
 <div class="flex flex-col gap-12">
   <div class="w-full text-center">
     <h1 class="text-6xl mt-10 mb-8">{@count}</h1>
@@ -14,22 +28,15 @@
     <h2 class="mb-4">Leaderboard</h2>
     <ul class="text-xs text-gray-400">
       <%= for {{user_id, {score, username}}, index} <- Enum.with_index(@leaderboard) do %>
-        <li class={if user_id == @user_id, do: "text-black"}>
-          {index + 1}. {username}: {score}
-        </li>
+        <%= if username != "" do %>
+          <li class={if user_id == @user_id, do: "text-black"}>
+            {index + 1}. {username}: {score}
+          </li>
+        <% end %>
       <% end %>
     </ul>
   </div>
 </div>
-
-<%!-- <%= if @throttled_until do %>
-    <div class="text-red-600 mb-4">
-      You've been throttled for clicking too fast! Your score has been reset.
-      <%= if @throttled_until > System.system_time(:millisecond) do %>
-        Try again in {trunc((@throttled_until - System.system_time(:millisecond)) / 1000)} seconds.
-      <% end %>
-    </div>
-  <% end %> --%>
 
 <%!-- 
 <div class="container mx-auto p-4">
