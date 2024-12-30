@@ -29,13 +29,17 @@
     </div>
   </.form>
 
-  <div class="w-full p-4 text-center mt-12">
+  <div class="w-full p-4 text-center ">
     <h2 class="mb-4">Leaderboard</h2>
-    <ul class="text-xs text-gray-400">
-      <%= for {{_user_id, {score, username}}, index} <- Enum.with_index(@leaderboard) do %>
-        <li>
-          {index + 1}. {username}: {score}
-        </li>
+    <ul class="text-xs text-gray-400 w-fit mx-auto">
+      <%= for {{user_id, {score, username}}, index} <- Enum.with_index(@leaderboard) do %>
+        <%= if username != "" do %>
+          <li class="flex gap-2 ">
+            <span>{index + 1}.</span>
+            <span>{username}</span>
+            <span>{score}</span>
+          </li>
+        <% end %>
       <% end %>
     </ul>
   </div>

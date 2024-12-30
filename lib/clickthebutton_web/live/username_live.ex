@@ -28,8 +28,12 @@ defmodule ClickthebuttonWeb.UsernameLive do
   end
 
   @impl true
-  def handle_info({:score_updated, _user_id, _new_score}, socket) do
-    # Always refresh leaderboard when any score changes
-    {:noreply, assign(socket, :leaderboard, GameServer.get_leaderboard())}
+  def handle_info({:score_updated, user_id, _new_score}, socket) do
+    {:noreply, assign(socket, leaderboard: GameServer.get_leaderboard())}
+  end
+
+  @impl true
+  def handle_info({:user_throttled, user_id, _until}, socket) do
+    {:noreply, assign(socket, leaderboard: GameServer.get_leaderboard())}
   end
 end
