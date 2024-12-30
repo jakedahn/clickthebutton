@@ -26,11 +26,13 @@
 
   <div class="w-full p-4 text-center ">
     <h2 class="mb-4">Leaderboard</h2>
-    <ul class="text-xs text-gray-400">
+    <ul class="text-xs text-gray-400 w-fit mx-auto">
       <%= for {{user_id, {score, username}}, index} <- Enum.with_index(@leaderboard) do %>
         <%= if username != "" do %>
-          <li class={if user_id == @user_id, do: "text-black"}>
-            {index + 1}. {username}: {score}
+          <li class={"flex gap-2 " <> if user_id == @user_id, do: "text-black", else: "text-inherit"}>
+            <span>{index + 1}.</span>
+            <span>{username}</span>
+            <span>{score}</span>
           </li>
         <% end %>
       <% end %>
