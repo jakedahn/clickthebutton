@@ -33,4 +33,4 @@ kill_signal = 'SIGTERM'
 
 [mounts]
 source="clickthebutton_data"
-destination="/app/priv"
+destination="/app/data"

@@ -5,7 +5,11 @@ defmodule Clickthebutton.GameServer do
   @table_name :ctb_game_state
   # Save every 1 minute
   @save_interval :timer.seconds(5)
-  @save_path Application.compile_env(:clickthebutton, :game_state_path, "priv/game_state.dat")
+  @save_path Application.compile_env(
+               :clickthebutton,
+               :game_state_path,
+               "/app/data/game_state.dat"
+             )
   @topic "game:scores"
 
   # New constants for throttling

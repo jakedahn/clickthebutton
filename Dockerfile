@@ -87,6 +87,10 @@ ENV MIX_ENV="prod"
 # Only copy the final release from the build stage
 COPY --from=builder --chown=nobody:root /app/_build/${MIX_ENV}/rel/clickthebutton ./
 
+RUN mkdir -p /app/data && \
+    chown -R nobody:nogroup /app/data && \
+    chmod 755 /app/data
+
 USER nobody
 
 # If using an environment that doesn't automatically reap zombie processes, it is

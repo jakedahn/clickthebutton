@@ -63,3 +63,12 @@ config :phoenix, :json_library, Jason
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
 import_config "#{config_env()}.exs"
+
+# Add near the top with other configs
+if config_env() == :prod do
+  config :clickthebutton,
+    game_state_path: "/app/data/game_state.dat"
+else
+  config :clickthebutton,
+    game_state_path: "priv/game_state.dat"
+end

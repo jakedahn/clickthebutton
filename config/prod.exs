@@ -10,7 +10,7 @@ config :clickthebutton, ClickthebuttonWeb.Endpoint,
   http: [port: {:system, "PORT"}],
   url: [scheme: "https", host: "clickthebutton.lol", port: 443],
   check_origin: ["https://clickthebutton.lol", "https://clickthebutton.fly.dev"],
-  game_state_path: "/app/priv/game_state.dat"
+  game_state_path: "/app/data/game_state.dat"
 
 # Configures Swoosh API Client
 config :swoosh, api_client: Swoosh.ApiClient.Finch, finch_name: Clickthebutton.Finch
