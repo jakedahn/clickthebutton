@@ -15,7 +15,14 @@ defmodule Clickthebutton.GameServer do
 
   # Add to your state
   defmodule State do
-    defstruct [:table, :dirty, :click_timestamps, :throttled_users, test_time: nil]
+    defstruct [
+      :table,
+      :dirty,
+      :click_timestamps,
+      :throttled_users,
+      test_time: nil,
+      last_save: nil
+    ]
   end
 
   # Client API
@@ -175,10 +182,6 @@ defmodule Clickthebutton.GameServer do
     {:noreply, %{state | last_save: DateTime.utc_now(), dirty: false}}
   end
 
-  defp schedule_save do
-    Process.send_after(self(), :save_to_disk, @save_interval)
-  end
-
   # NOTE: This is only used inside of tests to reset state.
   @impl true
   def handle_info(:reinit_for_test, state) do
@@ -209,6 +212,10 @@ defmodule Clickthebutton.GameServer do
   @impl true
   def handle_info({:test_set_time, time}, state) do
     {:noreply, %{state | test_time: time}}
+  end
+
+  defp schedule_save do
+    Process.send_after(self(), :save_to_disk, @save_interval)
   end
 
   # Helper functions
